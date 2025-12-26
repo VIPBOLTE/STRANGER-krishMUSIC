@@ -51,7 +51,7 @@ GIT_TOKEN = getenv("GIT_TOKEN", None)
 
 # Support
 SUPPORT_CHANNEL = getenv("SUPPORT_CHANNEL", "https://t.me/krishupdates")
-SUPPORT_CHAT = getenv("SUPPORT_CHAT", "https://t.me/bklok")
+SUPPORT_CHAT = getenv("SUPPORT_CHAT", "https://t.me/supp8iiiny")
 
 # YT-API Get from @AmShashank on tg
 YOUR_API_KEY = getenv("YOUR_API_KEY", "stranger")
