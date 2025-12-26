@@ -1,107 +1,155 @@
 # -----------------------------------------------
 # 🔸 StrangerMusic Project
-# 🔹 Developed & Maintained by: Shashank Shukla (https://github.com/itzshukla)
-# 📅 Copyright © 2022 – All Rights Reserved
-#
-# 📖 License:
-# This source code is open for educational and non-commercial use ONLY.
-# You are required to retain this credit in all copies or substantial portions of this file.
-# Commercial use, redistribution, or removal of this notice is strictly prohibited
-# without prior written permission from the author.
-#
-# ❤️ Made with dedication and love by ItzShukla
+# 🔹 Developed & Maintained by: Shashank Shukla
 # -----------------------------------------------
+
 from SHUKLAMUSIC import app
-from pyrogram.errors import RPCError
+from pyrogram import filters, enums
 from pyrogram.types import ChatMemberUpdated, InlineKeyboardMarkup, InlineKeyboardButton
-from typing import Union, Optional
 from PIL import Image, ImageDraw, ImageFont, ImageEnhance, ImageChops
-import random
 import asyncio
 import os
-import time
 from logging import getLogger
-from pyrogram import Client, filters, enums
-from pyrogram.enums import ParseMode, ChatMemberStatus
-from SHUKLAMUSIC.utils.database import add_served_chat, get_assistant, is_active_chat
-from SHUKLAMUSIC.misc import SUDOERS
-from SHUKLAMUSIC.mongo.afkdb import PROCESS
-from SHUKLAMUSIC.utils.Shukla_ban import admin_filter
 
 LOGGER = getLogger(__name__)
 
-random_photo = [
-    "https://telegra.ph/file/1949480f01355b4e87d26.jpg",
-    "https://telegra.ph/file/3ef2cc0ad2bc548bafb30.jpg",
-    "https://telegra.ph/file/a7d663cd2de689b811729.jpg",
-    "https://telegra.ph/file/6f19dc23847f5b005e922.jpg",
-    "https://telegra.ph/file/2973150dd62fd27a3a6ba.jpg",
-]
+# ---------------- DATABASE ---------------- #
 
-# --------------------------------------------------------------------------------- #
 class WelDatabase:
     def __init__(self):
         self.data = {}
 
-    async def find_one(self, chat_id):
-        return chat_id in self.data
+    async def is_enabled(self, chat_id: int):
+        return self.data.get(chat_id, True)
 
-    async def add_wlcm(self, chat_id):
-        if chat_id not in self.data:
-            self.data[chat_id] = {"state": "on"}  # Default state is "on"
+    async def enable(self, chat_id: int):
+        self.data[chat_id] = True
 
-    async def rm_wlcm(self, chat_id):
-        if chat_id in self.data:
-            del self.data[chat_id]
+    async def disable(self, chat_id: int):
+        self.data[chat_id] = False
+
 
 wlcm = WelDatabase()
 
+# ---------------- TEMP STORAGE ---------------- #
+
 class temp:
-    ME = None
-    CURRENT = 2
-    CANCEL = False
     MELCOW = {}
-    U_NAME = None
-    B_NAME = None
 
+# ---------------- IMAGE FUNCTIONS ---------------- #
 
-def circle(pfp, size=(535, 535), brightness_factor=10):
+def circle(pfp, size=(535, 535), brightness_factor=1.2):
     pfp = pfp.resize(size).convert("RGBA")
     pfp = ImageEnhance.Brightness(pfp).enhance(brightness_factor)
+
     bigsize = (pfp.size[0] * 3, pfp.size[1] * 3)
     mask = Image.new("L", bigsize, 0)
     draw = ImageDraw.Draw(mask)
     draw.ellipse((0, 0) + bigsize, fill=255)
     mask = mask.resize(pfp.size)
+
     mask = ImageChops.darker(mask, pfp.split()[-1])
     pfp.putalpha(mask)
     return pfp
 
 
-def welcomepic(pic, user, chatname, id, uname, brightness_factor=1.3):
+def welcomepic(pic, user_id):
     background = Image.open("SHUKLAMUSIC/assets/wel2.png")
     pfp = Image.open(pic).convert("RGBA")
-    pfp = circle(pfp, brightness_factor=brightness_factor)
-    pfp = pfp.resize((535, 535))
-    draw = ImageDraw.Draw(background)
-    font = ImageFont.truetype('SHUKLAMUSIC/assets/font.ttf', size=60)
-    draw.text((655, 465), f'ID: {id}', fill=(255, 255, 255), font=font)
-    pfp_position = (50, 90)
-    background.paste(pfp, pfp_position, pfp)
-    background.save(f"downloads/welcome#{id}.png")
-    return f"downloads/welcome#{id}.png"
+    pfp = circle(pfp)
 
+    draw = ImageDraw.Draw(background)
+    font = ImageFont.truetype("SHUKLAMUSIC/assets/font.ttf", size=60)
+
+    draw.text((655, 465), f"ID: {user_id}", fill=(255, 255, 255), font=font)
+    background.paste(pfp, (50, 90), pfp)
+
+    path = f"downloads/welcome_{user_id}.png"
+    background.save(path)
+    return path
+
+# ---------------- COMMAND ---------------- #
 
 @app.on_message(filters.command("welcome") & ~filters.private)
-async def auto_state(_, message):
-    usage = "**ᴜsᴀɢᴇ:**\n**⦿ /welcome [on|off]**"
-    if len(message.command) == 1:
-        return await message.reply_text(usage)
+async def welcome_toggle(_, message):
+    if len(message.command) != 2:
+        return await message.reply_text("**Usage:** `/welcome on | off`")
 
-    chat_id = message.chat.id
-    user = await app.get_chat_member(chat_id, message.from_user.id)
-    if user.status in (enums.ChatMemberStatus.ADMINISTRATOR, enums.ChatMemberStatus.OWNER):
-        A = await wlcm.find_one(chat_id)
+    member = await app.get_chat_member(message.chat.id, message.from_user.id)
+    if member.status not in (enums.ChatMemberStatus.ADMINISTRATOR, enums.ChatMemberStatus.OWNER):
+        return await message.reply_text("**Only admins can use this command.**")
+
+    state = message.command[1].lower()
+
+    if state == "on":
+        await wlcm.enable(message.chat.id)
+        await message.reply_text("✅ **Welcome enabled**")
+    elif state == "off":
+        await wlcm.disable(message.chat.id)
+        await message.reply_text("❌ **Welcome disabled**")
+    else:
+        await message.reply_text("**Usage:** `/welcome on | off`")
+
+# ---------------- WELCOME EVENT ---------------- #
+
+@app.on_chat_member_updated(filters.group, group=-3)
+async def greet_new_member(_, member: ChatMemberUpdated):
+    chat_id = member.chat.id
+
+    if not await wlcm.is_enabled(chat_id):
+        return
+
+    if not member.new_chat_member or member.old_chat_member:
+        return
+
+    user = member.new_chat_member.user
+    count = await app.get_chat_members_count(chat_id)
+
+    try:
+        pic = await app.download_media(
+            user.photo.big_file_id,
+            file_name=f"pp_{user.id}.png"
+        )
+    except:
+        pic = "SHUKLAMUSIC/assets/upic.png"
+
+    try:
+        if temp.MELCOW.get(chat_id):
+            await temp.MELCOW[chat_id].delete()
+
+        welcomeimg = welcomepic(pic, user.id)
+
+        buttons = []
+        if user.username:
+            buttons.append([InlineKeyboardButton("👤 View User", url=f"https://t.me/{user.username}")])
+
+        msg = await app.send_photo(
+            chat_id,
+            photo=welcomeimg,
+            caption=f"""
+🎉 **Welcome to {member.chat.title}**
+
+👤 **Name:** {user.mention}
+🆔 **ID:** `{user.id}`
+👥 **Members:** {count}
+""",
+            reply_markup=InlineKeyboardMarkup(buttons) if buttons else None
+        )
+
+        temp.MELCOW[chat_id] = msg
+
+        await asyncio.sleep(300)
+        await msg.delete()
+        temp.MELCOW.pop(chat_id, None)
+
+    except Exception as e:
+        LOGGER.error(e)
+
+    finally:
+        if os.path.exists(pic):
+            os.remove(pic)
+        if os.path.exists(welcomeimg):
+            os.remove(welcomeimg)
         state = message.text.split(None, 1)[1].strip().lower()
         if state == "off":
             if A:
