@@ -65,3 +65,4 @@ wget
 youtube-search
 youtube-search-python
 yt-dlp
+yt-search-py
