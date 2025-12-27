@@ -15,10 +15,11 @@ from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 from ytSearch import VideosSearch, CustomSearch
 import base64
-from AnonXMusic import LOGGER
-from AnonXMusic.utils.database import is_on_off
-from AnonXMusic.utils.formatters import time_to_seconds
-from config import YT_API_KEY, YTPROXY_URL as YTPROXY
+from SHUKLAMUSIC import LOGGER
+from SHUKLAMUSIC.utils.database import is_on_off
+from SHUKLAMUSIC.utils.formatters import time_to_seconds
+YT_API_KEY=""
+YTPROXY=""
 
 logger = LOGGER(__name__)
 
