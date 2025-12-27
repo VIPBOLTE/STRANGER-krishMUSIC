@@ -15,11 +15,10 @@ from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 from ytSearch import VideosSearch, CustomSearch
 import base64
-from SHUKLAMUSIC import LOGGER
-from SHUKLAMUSIC.utils.database import is_on_off
-from SHUKLAMUSIC.utils.formatters import time_to_seconds
-YT_API_KEY = "xbit_bvLMbXODhcL86uSbuQEAX45SZ8KTRUWN"
-YTPROXY = "https://tgapi.xbitcode.com"
+from AnonXMusic import LOGGER
+from AnonXMusic.utils.database import is_on_off
+from AnonXMusic.utils.formatters import time_to_seconds
+from config import YT_API_KEY, YTPROXY_URL as YTPROXY
 
 logger = LOGGER(__name__)
 
@@ -542,6 +541,95 @@ class YouTubeAPI:
                     logger.error("API Endpoint not set in config")
                     return None
                 
+                    "x-api-key": f"{YT_API_KEY}",
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+                }
+                
+                filepath = f"downloads/{title}.mp4"
+                
+                if os.path.exists(filepath):
+                    return filepath
+                
+                session = create_session()
+                getVideo = session.get(f"{YTPROXY}/info/{vid_id}", headers=headers, timeout=60)
+                
+                try:
+                    videoData = getVideo.json()
+                except Exception as e:
+                    logger.error(f"Invalid response from API: {str(e)}")
+                    return None
+                finally:
+                    session.close()
+                
+                status = videoData.get('status')
+                if status == 'success':
+                    video_url = videoData['video_url']
+                    
+                    result = await download_with_requests(video_url, filepath, headers)
+                    return result
+                    
+                logger.error(f"API Error: {videoData.get('message', 'Unknown error')}")
+                return None
+                
+            except Exception as e:
+                logger.error(f"Error in song video download: {str(e)}")
+                return None
+
+        async def song_audio_dl():
+            try:
+                if not YT_API_KEY:
+                    logger.error("API KEY not set in config")
+                    return None
+                if not YTPROXY:
+                    logger.error("API Endpoint not set in config")
+                    return None
+                
                 headers = {
                     "x-api-key": f"{YT_API_KEY}",
-                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Ap
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+                }
+                
+                filepath = f"downloads/{title}.mp3"
+                
+                if os.path.exists(filepath):
+                    return filepath
+                
+                session = create_session()
+                getAudio = session.get(f"{YTPROXY}/info/{vid_id}", headers=headers, timeout=60)
+                
+                try:
+                    audioData = getAudio.json()
+                except Exception as e:
+                    logger.error(f"Invalid response from API: {str(e)}")
+                    return None
+                finally:
+                    session.close()
+                
+                status = audioData.get('status')
+                if status == 'success':
+                    audio_url = audioData['audio_url']
+                    
+                    result = await download_with_requests(audio_url, filepath, headers)
+                    return result
+                    
+                logger.error(f"API Error: {audioData.get('message', 'Unknown error')}")
+                return None
+                
+            except Exception as e:
+                logger.error(f"Error in song audio download: {str(e)}")
+                return None
+
+        if songvideo:
+            fpath = await song_video_dl()
+            return fpath
+        elif songaudio:
+            fpath = await song_audio_dl()
+            return fpath
+        elif video:
+            direct = True
+            downloaded_file = await video_dl(vid_id)
+        else:
+            direct = True
+            downloaded_file = await audio_dl(vid_id)
+        
+        return downloaded_file, direct
