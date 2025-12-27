@@ -111,11 +111,15 @@ async def greet_new_member(_, member: ChatMemberUpdated):
             chat_id,
             photo=img,
             caption=f"""
-🎉 **Welcome to {member.chat.title}**
+ㅤㅤ◦•●◉✿ ᴡᴇʟᴄᴏᴍᴇ ✿◉●•◦
+**▬▭▬▭▬▭▬▭▬▭▬▭▬▭▬**
 
-👤 **Name:** {user.mention}
-🆔 **ID:** `{user.id}`
-👥 **Members:** {count}
+**☉ ɴᴀᴍᴇ ⧽** {user.mention}
+**☉ ɪᴅ ⧽** `{user.id}`
+**☉ ᴜ_ɴᴀᴍᴇ ⧽** @{user.username if user.username else 'None'}
+**☉ ᴛᴏᴛᴀʟ ᴍᴇᴍʙᴇʀs ⧽** {count}
+
+**▬▭▬▭▬▭▬▭▬▭▬▭▬▭▬**
 """,
             reply_markup=InlineKeyboardMarkup(buttons) if buttons else None
         )
