@@ -54,8 +54,8 @@ SUPPORT_CHANNEL = getenv("SUPPORT_CHANNEL", "https://t.me/krishupdates")
 SUPPORT_CHAT = getenv("SUPPORT_CHAT", "https://t.me/supp8iiiny")
 
 # YT-API Get from @AmShashank on tg
-YOUR_API_KEY = getenv("YOUR_API_KEY", "stranger")
-YOUR_API_URL = getenv("YOUR_API_URL", "http://46.38.237.240:8000")
+YOUR_API_KEY = getenv("YOUR_API_KEY", "StrangerApi1af4774")
+YOUR_API_URL = getenv("YOUR_API_URL", "http://139.59.31.247:8080")
 
 # Assistant settings
 AUTO_LEAVING_ASSISTANT = getenv("AUTO_LEAVING_ASSISTANT", "True")
