@@ -1,4 +1,4 @@
-from SHUKLAMUSIC import app
+'''from SHUKLAMUSIC import app
 from pyrogram import filters, enums
 from pyrogram.types import ChatMemberUpdated, InlineKeyboardMarkup, InlineKeyboardButton
 from PIL import Image, ImageDraw, ImageFont, ImageEnhance, ImageChops
@@ -136,3 +136,4 @@ async def greet_new_member(_, member: ChatMemberUpdated):
             if f and os.path.exists(f):
                 os.remove(f)
 
+'''
